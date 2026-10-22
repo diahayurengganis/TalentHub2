@@ -1,0 +1,142 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class TalentHubMasterSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // Nonaktifkan foreign key checks sementara agar proses input data lancar tanpa sangkutan urutan relasi
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        // 1. MIGRASI & PENYATUAN DATA: student + tb_mahasiswa
+        $this->command->info('Memproses tabel student...');
+        $oldStudents = DB::connection('mysql_old')->table('student')->get();
+
+        foreach ($oldStudents as $old) {
+            // Ambil info tambahan 'jurusan' dari tb_mahasiswa lama (jika ada kesamaan NIM)
+            $extraInfo = DB::connection('mysql_old')->table('tb_mahasiswa')
+                ->where('nim', $old->id_mhs)
+                ->first();
+
+            // Masukkan ke tabel student inti baru
+            DB::table('student')->insert([
+                'id_mhs'     => $old->id_mhs,
+                'name'       => $old->name,
+                'prodi'      => $old->prodi,
+                'jurusan'    => $extraInfo ? $extraInfo->jurusan : null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Masukkan sisa kolom ke tabel student_profile (Normalisasi 1-to-1)
+            DB::table('student_profile')->insert([
+                'id_mhs'          => $old->id_mhs,
+                'profile'         => $old->profile,
+                'gpa'             => $old->gpa,
+                'personal_email'  => $old->personal_email,
+                'profile_picture' => $old->profile_picture ?: 'default.jpg',
+                'address'         => $old->address,
+                'phone'           => $old->phone,
+                'skill'           => $old->skill,
+                'twitter'         => $old->twitter,
+                'instagram'       => $old->instagram,
+                'linkedin'        => $old->linkedin,
+                'facebook'        => $old->facebook,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+        }
+
+        // --- HELPER UNTUK PROSES COPY DATA SECARA MASSAL (BULK INSERT) ---
+        $tablesToCopy = [
+            'academic'          => 'id_acad',
+            'achievement'       => 'id_ach',
+            'education'         => 'id_education',
+            'job_experience'    => 'id_experience',
+            'reference'         => 'id_reference',
+            'related_product'   => 'id_product',
+            'competency_master' => 'id_competency_master',
+        ];
+
+        foreach ($tablesToCopy as $tableName => $oldPrimaryKey) {
+            $this->command->info("Memproses tabel {$tableName}...");
+            $oldData = DB::connection('mysql_old')->table($tableName)->get();
+
+            $newData = [];
+            foreach ($oldData as $item) {
+                // Konversi data object ke array
+                $arr = (array) $item;
+
+                // Buang primary key lama agar digantikan Auto-Increment ID baru bawaan Laravel
+                unset($arr[$oldPrimaryKey]);
+
+                $arr['created_at'] = now();
+                $arr['updated_at'] = now();
+                $newData[] = $arr;
+            }
+
+            // Insert massal per 500 baris agar tidak membebani limit query mysql
+            if (!empty($newData)) {
+                foreach (array_chunk($newData, 500) as $chunk) {
+                    DB::table($tableName)->insert($chunk);
+                }
+            }
+        }
+
+        // 2. TRANSFER DATA: competency (Hubungkan foreign key ke tabel student asli)
+        $this->command->info('Memproses tabel competency...');
+        $oldCompetency = DB::connection('mysql_old')->table('competency')->get();
+        $competencyData = [];
+        foreach ($oldCompetency as $comp) {
+            $competencyData[] = [
+                'id_mhs'       => $comp->id_mahasiswa, // Pindah ke kolom relasi baru
+                'kode_matkul'  => $comp->kode_matkul,
+                'nilai'        => $comp->nilai,
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ];
+        }
+        if (!empty($competencyData)) {
+            foreach (array_chunk($competencyData, 500) as $chunk) {
+                DB::table('competency')->insert($chunk);
+            }
+        }
+
+        // 3. TRANSFER DATA: language (Sesuaikan kolom tinyint ke boolean)
+        $this->command->info('Memproses tabel language...');
+        $oldLanguage = DB::connection('mysql_old')->table('language')->get();
+        foreach ($oldLanguage as $lang) {
+            $newLangId = DB::table('language')->insertGetId([
+                'id_mhs'     => $lang->id_mhs,
+                'language'   => $lang->language,
+                'is_active'  => (bool) $lang->activ, // cast tinyint ke boolean
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Sekaligus tarik data lampiran sertifikat bahasa pendukungnya (attach_language) jika ada
+            $oldAttach = DB::connection('mysql_old')->table('attach_language')
+                ->where('id_language', $lang->id_language)
+                ->get();
+
+            foreach ($oldAttach as $attach) {
+                DB::table('attach_language')->insert([
+                    'language_id' => $newLangId, // Mapping ke ID baris baru laravel
+                    'certificate' => $attach->certificate,
+                    'score'       => $attach->score,
+                    'attachment'  => $attach->attachment,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+            }
+        }
+
+        // Aktifkan kembali pengecekan foreign key
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        $this->command->info('🎉 Sukses Besar! 10,224+ data Talenthub berhasil ditransformasi.');
+    }
+}

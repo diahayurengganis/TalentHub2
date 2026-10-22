@@ -1,0 +1,198 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        // 1. TABEL UTAMA MAHASISWA (Penyatuan data student & tb_mahasiswa)
+        Schema::create('student', function (Blueprint $table) {
+            $table->string('id_mhs', 50)->primary(); // NIM tetap sebagai Primary Key Utama
+            $table->string('name', 100);
+            $table->string('prodi', 100);
+            $table->string('jurusan', 100)->nullable(); // Diambil dari pecahan tb_mahasiswa lama
+            $table->timestamps();
+        });
+
+        // 2. TABEL PROFIL DETAIL (1-to-1 dengan Student)
+        Schema::create('student_profile', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50)->unique();
+            $table->text('profile')->nullable();
+            $table->string('gpa', 50)->nullable();
+            $table->string('personal_email', 200)->nullable();
+            $table->string('profile_picture', 100)->default('default.jpg');
+            $table->string('address', 100)->nullable();
+            $table->string('phone', 100)->nullable();
+            $table->string('skill', 200)->nullable();
+
+            // Sosmed
+            $table->string('twitter', 200)->nullable();
+            $table->string('instagram', 200)->nullable();
+            $table->string('linkedin', 200)->nullable();
+            $table->string('facebook', 200)->nullable();
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 3. TABEL ACADEMIC PROJECT / PORTAL
+        Schema::create('academic', function (Blueprint $table) {
+            $table->id(); // Ganti dari id_acad int ke BigInteger Auto Increment standar laravel
+            $table->string('id_mhs', 50);
+            $table->year('year');
+            $table->string('title', 200);
+            $table->mediumText('description');
+            $table->string('institution', 200);
+            $table->string('attachment', 255)->nullable();
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 4. TABEL PRESTASI (ACHIEVEMENT)
+        Schema::create('achievement', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50);
+            $table->string('achievement', 200);
+            $table->string('category', 200);
+            $table->string('title', 200);
+            $table->string('description', 255);
+            $table->date('time');
+            $table->string('organization', 200);
+            $table->string('level', 200);
+            $table->string('location', 200);
+            $table->integer('participant')->nullable();
+            $table->string('documentation', 255)->nullable();
+            $table->string('attachment', 255)->nullable();
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 5. TABEL RIWAYAT PENDIDIKAN FORMAL (EDUCATION)
+        Schema::create('education', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50);
+            $table->string('level', 200);
+            $table->string('institution', 200);
+            $table->year('year_start');
+            $table->year('year_end');
+            $table->string('major', 200);
+            $table->string('certificate', 255)->nullable();
+            $table->string('transcript', 255)->nullable();
+            $table->string('other', 255)->nullable();
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 6. TABEL PENGALAMAN KERJA (JOB EXPERIENCE)
+        Schema::create('job_experience', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50); // Disamakan panjangnya varchar(50) agar tidak eror
+            $table->string('title', 150);
+            $table->string('company', 150);
+            $table->string('location', 250);
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->string('employment_type', 200);
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 7. TABEL REFERENSI REKOMENDASI (REFERENCE)
+        Schema::create('reference', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50);
+            $table->string('name', 200);
+            $table->string('title', 200);
+            $table->string('institution', 200);
+            $table->string('email', 200);
+            $table->string('telp', 50);
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 8. TABEL PRODUK PBL MAHASISWA (RELATED PRODUCT)
+        Schema::create('related_product', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50); // Samakan varchar(50)
+            $table->string('title', 250);
+            $table->string('description', 255);
+            $table->string('thumbnail', 200)->nullable();
+            $table->string('link', 255);
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 9. TABEL MASTER DATA MATAKULIAH KOMPETENSI
+        Schema::create('competency_master', function (Blueprint $table) {
+            $table->id();
+            $table->string('kode_matkul', 100)->unique();
+            $table->string('kode_jurusan', 100);
+            $table->string('nama_matkul', 100);
+            $table->string('competency', 200);
+            $table->text('description');
+            $table->timestamps();
+        });
+
+        // 10. TABEL TRANSKRIP NILAI KOMPETENSI MAHASISWA
+        Schema::create('competency', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50); // Sekarang kita kunci langsung ke tabel student utama!
+            $table->string('kode_matkul', 100);
+            $table->string('nilai', 100);
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('kode_matkul')->references('kode_matkul')->on('competency_master')->onDelete('cascade');
+        });
+
+        // 11. TABEL BAHASA (LANGUAGE)
+        Schema::create('language', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_mhs', 50);
+            $table->string('language', 50);
+            $table->boolean('is_active')->default(true); // Ganti dari tinyint ke boolean laravel
+            $table->timestamps();
+
+            $table->foreign('id_mhs')->references('id_mhs')->on('student')->onDelete('cascade')->onUpdate('cascade');
+        });
+
+        // 12. TABEL LAMPIRAN SERTIFIKAT BAHASA
+        Schema::create('attach_language', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('language_id'); // Foreign key ke tabel language
+            $table->string('certificate', 255);
+            $table->string('score', 50);
+            $table->string('attachment', 255)->nullable();
+            $table->timestamps();
+
+            $table->foreign('language_id')->references('id')->on('language')->onDelete('cascade')->onUpdate('cascade');
+        });
+    }
+
+    public function down(): void
+    {
+        // Drop dengan urutan terbalik untuk menghindari error foreign key constraint
+        Schema::dropIfExists('attach_language');
+        Schema::dropIfExists('language');
+        Schema::dropIfExists('competency');
+        Schema::dropIfExists('competency_master');
+        Schema::dropIfExists('related_product');
+        Schema::dropIfExists('reference');
+        Schema::dropIfExists('job_experience');
+        Schema::dropIfExists('education');
+        Schema::dropIfExists('achievement');
+        Schema::dropIfExists('academic');
+        Schema::dropIfExists('student_profile');
+        Schema::dropIfExists('student');
+    }
+};

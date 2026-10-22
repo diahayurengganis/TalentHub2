@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        // 1. Ganti nama tabel utama
+        Schema::rename('academic', 'certifications');
+
+        // 2. Sesuaikan nama kolom primary key agar tidak membingungkan
+        Schema::table('certifications', function (Blueprint $table) {
+            // $table->renameColumn('id_acad', 'id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('certifications', function (Blueprint $table) {
+            // $table->renameColumn('id', 'id_acad');
+        });
+
+        Schema::rename('certifications', 'academic');
+    }
+};

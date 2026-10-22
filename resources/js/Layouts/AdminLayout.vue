@@ -2,14 +2,32 @@
 import { ref, watch, onMounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
+
 const page = usePage();
+
+// Toast Notifikasi Fitur Belum Siap
+const underDevelopment = (featureName) => {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+        color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a',
+    });
+
+    Toast.fire({
+        icon: 'info',
+        title: `Fitur ${featureName} sedang dalam tahap pengembangan.`
+    });
+};
 
 watch(
     () => page.props.flash_message,
     (flash) => {
         if (!flash || !flash.message) return;
 
-        // 1. OPSI RENDERING SEBAGAI TOAST KECIL DI POJOK LAYAR
         if (flash.display === 'toast') {
             const Toast = Swal.mixin({
                 toast: true,
@@ -26,17 +44,15 @@ watch(
             });
 
             Toast.fire({
-                icon: flash.type || 'success', // dinamis: bisa success, error, info, atau warning
+                icon: flash.type || 'success',
                 title: flash.message
             });
         }
-
-        // 2. OPSI RENDERING SEBAGAI MODAL BESAR
         else if (flash.display === 'modal') {
             Swal.fire({
                 title: flash.title || 'Informasi',
                 text: flash.message,
-                icon: flash.type || 'info', // dinamis mengikuti server
+                icon: flash.type || 'info',
                 confirmButtonColor: '#1e3a8a',
                 background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff',
                 color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a',
@@ -45,7 +61,6 @@ watch(
     },
     { immediate: true, deep: true }
 );
-
 </script>
 
 <template>
@@ -64,18 +79,49 @@ watch(
 
       <!-- Navigation Links -->
       <nav class="flex-grow p-4 space-y-1.5 overflow-y-auto">
-        <Link href="/admin" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-white bg-indigo-600/10 border-l-4 border-indigo-500 transition">
+        <!-- 1. Ikhtisar Dasbor -->
+        <Link 
+          href="/dashboard" 
+          :class="[
+            $page.url === '/dashboard' 
+              ? 'text-white bg-indigo-600/10 border-l-4 border-indigo-500 font-semibold' 
+              : 'hover:bg-slate-800 hover:text-white',
+            'flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition'
+          ]"
+        >
           <i class="fa-solid fa-chart-pie"></i> Ikhtisar Dasbor
         </Link>
-        <Link href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 hover:text-white transition">
+
+        <!-- 2. Verifikasi Mahasiswa -->
+        <Link 
+          href="/dashboard/tu/verifications" 
+          :class="[
+            $page.url.startsWith('/dashboard/tu/verifications') 
+              ? 'text-white bg-indigo-600/10 border-l-4 border-indigo-500 font-semibold' 
+              : 'hover:bg-slate-800 hover:text-white',
+            'flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition'
+          ]"
+        >
           <i class="fa-solid fa-users"></i> Verifikasi Mahasiswa
         </Link>
-        <Link href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 hover:text-white transition">
+
+        <!-- 3. Manajemen Mitra -->
+        <button 
+          @click="underDevelopment('Manajemen Mitra')"
+          type="button"
+          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition hover:bg-slate-800 hover:text-white text-left"
+        >
           <i class="fa-solid fa-building"></i> Manajemen Mitra
-        </Link>
-        <Link href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 hover:text-white transition">
+        </button>
+
+        <!-- 4. Verifikasi Lowongan -->
+        <button 
+          @click="underDevelopment('Verifikasi Lowongan')"
+          type="button"
+          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition hover:bg-slate-800 hover:text-white text-left"
+        >
           <i class="fa-solid fa-briefcase"></i> Verifikasi Lowongan
-        </Link>
+        </button>
       </nav>
 
       <!-- Sidebar Footer -->

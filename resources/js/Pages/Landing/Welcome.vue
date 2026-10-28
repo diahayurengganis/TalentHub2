@@ -64,6 +64,10 @@ const submitContact = () => {
         <a href="#students" class="w-full sm:w-auto px-8 py-3.5 font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-2xl shadow-xs transition text-center text-sm">
           View Student Portfolios
         </a>
+
+         <Link :href="route('tu.verifications.index')" class="w-full sm:w-auto px-8 py-3.5 font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-2xl shadow-xs transition text-center text-sm">
+    Dashboard TU →
+  </Link>
       </div>
 
       <!-- Supporting Partners -->

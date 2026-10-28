@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\RelatedProduct;
 
 class Student extends Model
 {
-    protected $table = 'students';
+    protected $table = 'student';
     protected $primaryKey = 'id_mhs';
     public $incrementing = false; // Karena NIM berupa string
     protected $keyType = 'string';
@@ -45,4 +46,13 @@ class Student extends Model
     {
         return $this->hasMany(JobExperience::class, 'id_mhs', 'id_mhs');
     }
+
+    public function products(): HasMany
+{
+    return $this->hasMany(
+        RelatedProduct::class,
+        'id_mhs',
+        'id_mhs'
+    );
+}
 }

@@ -26,6 +26,37 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
+        
+        // Login pengujian lokal sesuai arahan Manpro
+        if (app()->environment('local')) {
+            $student = Student::find($request->username);
+
+            if (!$student) {
+                return back()->with('flash_message', [
+                    'display' => 'modal',
+                    'type' => 'error',
+                    'title' => 'Student Not Found',
+                    'message' => 'NIM tidak ditemukan di database lokal. Gunakan NIM mahasiswa yang tersedia di tabel student.'
+                ]);
+            }
+
+            session([
+                'user_nik' => $student->id_mhs,
+                'user_jabatan' => 'Mahasiswa',
+                'nama' => $student->name,
+            ]);
+
+            return redirect()->route('dashboard')->with(
+                'flash_message',
+                [
+                    'display' => 'toast',
+                    'type' => 'success',
+                    'message' => 'Login pengujian lokal berhasil!'
+                ]
+            );
+        }
+
+
         $apiUrl = 'https://sid.polibatam.ac.id/api/v1.php';
 
         try {

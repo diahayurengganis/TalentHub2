@@ -251,18 +251,13 @@ class StudentProfileController extends Controller
 
         // 🌟 PERBAIKAN: Memuat eager loading model 'certifications' (menggantikan 'academics')
         $student = Student::with([
-            'profile',
-            'certifications',
-            'achievements',
-            // 🌟 PERBAIKAN: Urutkan data pendidikan dari tahun kelulusan paling baru ke lama
-            'educations' => function($query) {
-                $query->orderBy('year_end', 'desc');
-            },
-            'experiences',
-            'products',
-            'languages.attachments',
-            'competencies.master'
-        ])->find($nik);
+    'profile',
+    'certifications',
+    'achievements',
+    'educations',
+    'experiences',
+    'products',
+])->find($nik);
 
         if ($student && !$student->profile) {
             $student->profile()->create([

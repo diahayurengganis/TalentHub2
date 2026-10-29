@@ -85,12 +85,30 @@ Route::prefix('dashboard/student')->group(function () {
     Route::delete('/artifacts/products/{id}', [RelatedProductController::class, 'destroy'])->name('products.destroy');
 });
 
-// ====================
-// TATA USAHA (TU) & ADMIN DASHBOARD
-// ====================
-Route::get('/dashboard', function () {
-    return redirect()->route('tu.verifications.index');
-})->name('dashboard');
 
-Route::get('/dashboard/tu/verifications', [TUController::class, 'verificationIndex'])->name('tu.verifications.index');
-Route::put('/dashboard/tu/verifications/{id}', [TUController::class, 'updateVerification'])->name('tu.verifications.update');
+ // ====================
+ // TATA USAHA (TU) & ADMIN DASHBOARD
+ // ====================
+
+ // Halaman login TU
+ Route::get('/login/tu', [TUController::class, 'showLogin'])
+     ->name('tu.login');
+
+ // Proses login TU
+ Route::post('/login/tu', [TUController::class, 'login'])
+     ->name('tu.login.submit');
+
+ // Logout TU
+ Route::post('/logout/tu', [TUController::class, 'logout'])
+     ->name('tu.logout');
+
+
+ // Halaman verifikasi TU — wajib login
+ Route::middleware(['tu.auth'])->group(function () {
+     Route::get('/dashboard/tu/verifications', [TUController::class, 'verificationIndex'])
+         ->name('tu.verifications.index');
+
+     Route::put('/dashboard/tu/verifications/{id}', [TUController::class, 'updateVerification'])
+         ->name('tu.verifications.update');
+ });
+
